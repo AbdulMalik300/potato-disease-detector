@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaf Disease Detector</title>
+  <meta name="description" content="Classify potato and tomato leaf health from a single photo using a fine-tuned Vision Transformer." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__glow"></div>
+    <svg class="ambient__leaves" viewBox="0 0 200 200" preserveAspectRatio="none">
+      <path class="leaf leaf--1" d="M40 10 C80 20 90 70 60 110 C30 150 -10 130 5 80 C15 45 20 5 40 10 Z" />
+      <path class="leaf leaf--2" d="M150 40 C185 55 190 105 160 140 C130 175 95 150 110 105 C120 70 130 30 150 40 Z" />
+      <path class="leaf leaf--3" d="M90 120 C120 130 125 175 100 195 C75 215 50 195 60 160 C68 135 72 112 90 120 Z" />
+    </svg>
+  </div>
+
+  <main class="shell">
+    <header class="hero">
+      <p class="hero__eyebrow reveal" style="--delay: 0ms">Vision Transformer · Plant Pathology</p>
+      <h1 class="hero__title reveal" style="--delay: 90ms">Leaf Disease Detector</h1>
+      <p class="hero__subtitle reveal" style="--delay: 180ms">
+        Upload a single potato or tomato leaf photo and let a fine-tuned Vision Transformer read the signs of disease or a healthy plant.
+      </p>
+    </header>
+
+    <section class="card upload-card reveal" style="--delay: 270ms" aria-labelledby="crop-heading">
+      <div class="crop-switcher" role="tablist" aria-label="Select crop">
+        <button
+          id="tab-potato"
+          class="crop-tab"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="dropzone"
+          tabindex="0"
+          data-crop="potato"
+        >
+          <svg class="crop-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M5 19c0-8 5-13 14-14 0 9-5 14-14 14Z" stroke-linejoin="round" />
+            <path d="M5 19c2.5-4 6-7.5 10-10" stroke-linecap="round" />
+          </svg>
+          <span class="crop-tab__label">Potato</span>
+        </button>
+        <button
+          id="tab-tomato"
+          class="crop-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="dropzone"
+          tabindex="-1"
+          data-crop="tomato"
+        >
+          <svg class="crop-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M12 8c4.4 0 8 3.6 8 8s-3.6 6-8 6-8-2-8-6 3.6-8 8-8Z" stroke-linejoin="round" />
+            <path d="M12 8c-.6-2.2-.2-3.8 1-5M12 8c1.2-1.6 2.6-2.4 4.5-2.6M12 8c-1.5-1.3-2.9-1.9-4.6-1.9" stroke-linecap="round" />
+          </svg>
+          <span class="crop-tab__label">Tomato</span>
+        </button>
+      </div>
+
+      <div class="crop-head">
+        <h2 id="crop-heading" class="card__title">Potato leaf analysis</h2>
+        <p id="crop-subtitle" class="crop-subtitle">Identify early blight, late blight, and healthy potato leaves.</p>
+      </div>
+
+      <div
+        id="dropzone"
+        class="dropzone"
+        role="button"
+        tabindex="0"
+        aria-label="Choose or drop a potato leaf image"
+      >
+        <div id="dropzone-empty" class="dropzone__empty">
+          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <p class="dropzone__text"><strong>Drop a leaf photo here</strong> or click to browse</p>
+          <p class="dropzone__hint">JPG or PNG, up to 10 MB</p>
+        </div>
+
+        <div id="dropzone-preview" class="dropzone__preview" hidden>
+          <img id="preview-img" class="dropzone__img" alt="Preview of the selected leaf" />
+          <button id="change-chip" class="change-chip" type="button">Change image</button>
+          <p class="dropzone__meta">
+            <span id="file-name"></span><span class="dropzone__dot">·</span><span id="file-size"></span>
+          </p>
+        </div>
+
+        <div id="scanline" class="scanline" hidden></div>
+        <input id="file-input" class="dropzone__input" type="file" accept="image/*" />
+      </div>
+
+      <p id="status-text" class="status-text" role="status" aria-live="polite" hidden></p>
+
+      <div class="actions">
+        <button id="predict-btn" class="btn btn--primary" type="button" disabled>Analyze leaf</button>
+        <button id="reset-btn" class="btn btn--ghost" type="button" disabled>Analyze another image</button>
+      </div>
+
+      <p id="error-msg" class="error-msg" role="alert" hidden></p>
+    </section>
+
+    <section id="results" class="results" aria-live="polite" aria-atomic="false">
+      <div id="result-card" class="card result-card" hidden>
+        <div class="result-head">
+          <div>
+            <p class="result-head__label">Prediction</p>
+            <h2 id="result-name" class="result-head__name"></h2>
+          </div>
+          <div class="result-head__meta">
+            <span id="result-chip" class="chip"></span>
+            <span class="result-head__confidence">
+              <span id="result-confidence" class="confidence-number">0.00</span><span class="confidence-suffix">%</span>
+            </span>
+          </div>
+        </div>
+
+        <p id="result-model" class="result-model"></p>
+
+        <p id="low-confidence-notice" class="notice" hidden>
+          Low confidence. Please upload a clear, well-lit photo of a single leaf.
+        </p>
+
+        <h3 class="bars-title">Class probabilities</h3>
+        <ul id="prob-list" class="prob-list"></ul>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Educational project. Not a substitute for professional agronomic advice.</p>
+    </footer>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.python-version
+
+# Model weights (large files — add locally; see README)
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Environment / secrets
+.env
+.env.*
+
+# Tooling / editors
+.vscode/
+.idea/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
